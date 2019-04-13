@@ -1,16 +1,18 @@
 const Koa = require('koa');
 const Router = require('koa-router');
+let users = require('./src/UserDb.ts');
 const app = new Koa();
 const router = new Router();
 
 const port = 3000;
 
+// middleware logger
 app.use(async (ctx, next) => {
   await next();
   const time = ctx.response.get('X-Response-Time');
   console.log(`${ctx.method} ${ctx.url} - ${time}`)
 });
-
+// middleware response-Time
 app.use(async (ctx, next) => {
   const start = Date.now();
   await next();
@@ -19,24 +21,22 @@ app.use(async (ctx, next) => {
 });
 
 router
-  .get('/', async (ctx, next) => {
+  .get('/', async ctx => {
     ctx.body = `
     <h1>Hello</h1>
     <p>тестовый сервер</p>
     <p>для получения пользователей</p>
     `;
   })
-  .get('/users', async (ctx, next) => {
-    await next();
-    ctx.body = users;
+  .get('/users', async ctx => {
+    ctx.body = {data: users, error: ''};
   })
-  .get('/user/:id', async (ctx, next) => {
+  .get('/user/:id', async ctx => {
     const user = await users.find(u => u.id === ctx.params.id)
-    next();
     if (user) {
-      ctx.body = user;
+      ctx.body = {data: user, error: ''};
     } else {
-      ctx.assert(ctx.state.user, 404, 'User not found');
+      ctx.body = {data: {}, error: 'User not found'};
     }
   });
 
@@ -49,18 +49,3 @@ app
   .use(router.allowedMethods());
 
 app.listen(port);
-
-let users = [
-  {
-    name: '111',
-    id: '1',
-  },
-  {
-    name: '222',
-    id: '2',
-  },
-  {
-    name: '333',
-    id: '3',
-  }
-]
